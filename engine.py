@@ -7,7 +7,6 @@ import os
 import re
 import logging
 import shutil
-import tempfile
 
 import tde4
 
@@ -59,11 +58,6 @@ class TDEqualizerEngine(Engine):
 
     def destroy_engine(self):
         self.logger.debug("%s: Destroying...", self)
-        if not self._custom_scripts_dir_path:
-            return
-        toks = os.getenv("PYTHON_CUSTOM_SCRIPTS_3DE4", "").split(":")
-        toks.remove(self._custom_scripts_dir_path)
-        os.environ["PYTHON_CUSTOM_SCRIPTS_3DE4"] = ":".join(toks)
         self._cleanup_custom_scripts_dir_path()
 
     @property
@@ -91,8 +85,17 @@ class TDEqualizerEngine(Engine):
 
             self._cleanup_custom_scripts_dir_path()
 
-            # create temp dir
-            self._custom_scripts_dir_path = tempfile.mkdtemp()
+            # Get temp folder path and create it if needed.
+            self._custom_scripts_dir_path = os.environ['TK_3DE4_MENU_DIR']
+            try:
+                os.makedirs(self._custom_scripts_dir_path)
+            except OSError as error:
+                if error.errno != 17: # Don't error if folder already exists.
+                    raise
+
+            # Clear it.
+            for item in os.listdir(self._custom_scripts_dir_path):
+                os.remove(os.path.join(self._custom_scripts_dir_path, item))
 
             for i, (name, _) in enumerate(self.commands.items()):
                 script_path = os.path.join(
@@ -113,10 +116,6 @@ class TDEqualizerEngine(Engine):
                     )
                 )
                 f.close()
-
-            toks = os.getenv("PYTHON_CUSTOM_SCRIPTS_3DE4", "").split(":")
-            toks.append(self._custom_scripts_dir_path)
-            os.environ["PYTHON_CUSTOM_SCRIPTS_3DE4"] = ":".join(toks)
 
             QtCore.QTimer.singleShot(0, tde4.rescanPythonDirs)
 
