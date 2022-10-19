@@ -81,7 +81,7 @@ class TDEqualizerEngine(Engine):
         if self.has_ui:
             from sgtk.platform.qt import QtCore, QtGui
 
-            self.logger.info("Creating ShotGrid menu...")
+            self.logger.info("Creating Shotgrid menu...")
 
             self._cleanup_custom_scripts_dir_path()
 
@@ -106,7 +106,7 @@ class TDEqualizerEngine(Engine):
                     "\n".join(
                         (
                             "# 3DE4.script.name: {}".format(name),
-                            "# 3DE4.script.gui:	Main Window::ShotGrid",
+                            "# 3DE4.script.gui:	Main Window::Shotgrid",
                             "if __name__ == '__main__':",
                             "   import sgtk",
                             "   sgtk.platform.current_engine().commands[{}]['callback']()".format(
@@ -119,7 +119,7 @@ class TDEqualizerEngine(Engine):
 
             QtCore.QTimer.singleShot(0, tde4.rescanPythonDirs)
 
-            self.logger.info("ShotGrid menu created.")
+            self.logger.info("Shotgrid menu created.")
 
             return True
         return False
@@ -139,9 +139,9 @@ class TDEqualizerEngine(Engine):
 
     def _emit_log_message(self, handler, record):
         if record.levelno < logging.INFO:
-            formatter = logging.Formatter("Debug: ShotGrid %(basename)s: %(message)s")
+            formatter = logging.Formatter("Debug: Shotgrid %(basename)s: %(message)s")
         else:
-            formatter = logging.Formatter("ShotGrid %(basename)s: %(message)s")
+            formatter = logging.Formatter("Shotgrid %(basename)s: %(message)s")
         msg = formatter.format(record)
         print(msg)
 
