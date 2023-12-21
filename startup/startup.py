@@ -22,7 +22,7 @@ if __name__ == "__main__":
         user = ShotgunAuthenticator(sgtk.util.CoreDefaultsManager()).get_user()
         sgtk.set_authenticated_user(user)
         context = sgtk.context.deserialize(os.environ.get("TANK_CONTEXT"))
-        sgtk.platform.start_engine("tk-3dequalizer", context.sgtk, context)
+        sgtk.platform.start_engine("tk-3de4", context.sgtk, context)
 
     toks = os.getenv("PYTHON_CUSTOM_SCRIPTS_3DE4", "").split(":")
     toks.remove(os.path.dirname(__file__))

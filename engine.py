@@ -160,7 +160,7 @@ class TDEqualizerEngine(Engine):
 
     @property
     def api(self):
-        return self.import_module("tk_3dequalizer").api
+        return self.import_module("tk_3de4").api
 
     def iter_all_cameras(self):
         return self.api.TDECamera.iter_all()
