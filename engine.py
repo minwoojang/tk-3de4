@@ -5,7 +5,6 @@ A 3dequalizer engine for Tank.
 from __future__ import print_function
 import os
 import re
-import sys
 import logging
 import shutil
 
@@ -13,7 +12,6 @@ import tde4
 
 import sgtk
 from sgtk.platform import Engine
-# from startup.startup import g_current_file
 
 HEARTBEAT_INTERVAL_MS = 50
 
@@ -23,7 +21,21 @@ class TDEqualizerEngine(Engine):
         self._current_file = tde4.getProjectPath()
         self._custom_scripts_dir_path = None
         Engine.__init__(self, *args, **kwargs)
-        
+
+    def _heartbeat(self):
+        from sgtk.platform.qt import QtCore, QtGui
+
+        # Keep Qt alive
+        QtCore.QCoreApplication.processEvents()
+        # check for open file change
+        cur_file = tde4.getProjectPath()
+        if self._current_file != cur_file:
+            if cur_file:
+                new_context = self.sgtk.context_from_path(cur_file, self.context)
+                if new_context != self.context:
+                    sgtk.platform.change_context(new_context)
+            self._current_file = cur_file
+
     def pre_app_init(self):
         from sgtk.platform.qt import QtCore, QtGui
 
@@ -32,12 +44,11 @@ class TDEqualizerEngine(Engine):
             # the qt app, or python will destroy it and
             # ruin everything
             self._qt_app = QtGui.QApplication([])
-            # self._qt_app = g_current_file
             self._initialize_dark_look_and_feel()
-            # tde4.setTimerCallbackFunction(
-            #     "sgtk.platform.current_engine()._heartbeat",
-            #     HEARTBEAT_INTERVAL_MS,
-            # )
+            tde4.setTimerCallbackFunction(
+                "sgtk.platform.current_engine()._heartbeat",
+                HEARTBEAT_INTERVAL_MS,
+            )
 
     def post_app_init(self):
         self.create_shotgun_menu()
@@ -71,6 +82,42 @@ class TDEqualizerEngine(Engine):
             from sgtk.platform.qt import QtCore, QtGui
 
             self.logger.info("Creating Shotgrid menu...")
+
+            self._cleanup_custom_scripts_dir_path()
+
+            # Get temp folder path and create it if needed.
+            self._custom_scripts_dir_path = os.environ['TK_3DE4_MENU_DIR']
+            try:
+                os.makedirs(self._custom_scripts_dir_path)
+            except OSError as error:
+                if error.errno != 17: # Don't error if folder already exists.
+                    raise
+
+            # Clear it.
+            for item in os.listdir(self._custom_scripts_dir_path):
+                os.remove(os.path.join(self._custom_scripts_dir_path, item))
+
+            for i, (name, _) in enumerate(self.commands.items()):
+                script_path = os.path.join(
+                    self._custom_scripts_dir_path, "{:04d}.py".format(i)
+                )
+                f = open(script_path, "w")
+                f.write(
+                    "\n".join(
+                        (
+                            "# 3DE4.script.name: {}".format(name),
+                            "# 3DE4.script.gui:	Main Window::Shotgrid",
+                            "if __name__ == '__main__':",
+                            "   import sgtk",
+                            "   sgtk.platform.current_engine().commands[{}]['callback']()".format(
+                                repr(name)
+                            ),
+                        )
+                    )
+                )
+                f.close()
+
+            QtCore.QTimer.singleShot(0, tde4.rescanPythonDirs)
 
             self.logger.info("Shotgrid menu created.")
 

@@ -5,7 +5,9 @@ import os
 import sys
 import tde4
 #from PySide2 import QtGui, QtCore, QtWidgets
+
 sys.path.append("O:\\inhouse\\rez-packages\\PySide\\1.2.4\\platform-windows\\arch-AMD64\\python")
+
 if tde4.get3DEVersion().split()[-1] > '6':
     from Qt.QtCore import *
     from Qt.QtGui import *
@@ -32,6 +34,16 @@ def _timer():
         g_current_file = cur_file
 
 if __name__ == '__main__':
+    sys.path.append(
+        os.path.join(
+            os.getenv("TANK_CURRENT_PC"),
+            "install",
+            "core",
+            "python",
+        )
+    )
+    import sgtk
+    
     engine = tank.platform.current_engine()
     if not engine:
         from tank_vendor.shotgun_authentication import ShotgunAuthenticator
