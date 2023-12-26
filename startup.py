@@ -6,7 +6,6 @@ import tempfile
 import sgtk
 from sgtk.platform import SoftwareLauncher, LaunchInformation, SoftwareVersion
 
-
 class TDE4Launcher(SoftwareLauncher):
     """
     Handles launching 3DEqualizer4 executables. Automatically starts up
