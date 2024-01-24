@@ -1,10 +1,9 @@
-import sys
 import os
+import sys
 import subprocess
-import tempfile
 
 import sgtk
-from sgtk.platform import SoftwareLauncher, LaunchInformation, SoftwareVersion
+from sgtk.platform import SoftwareLauncher, SoftwareVersion, LaunchInformation
 
 class TDE4Launcher(SoftwareLauncher):
     """
@@ -12,7 +11,7 @@ class TDE4Launcher(SoftwareLauncher):
     a tk-3de4 engine with the current context in the new session
     of 3DEqualizer4.
     """
-    test = "O:\\inhouse\\3de"
+
     def prepare_launch(self, exec_path, args, file_to_open=None):
         """
         Prepares an environment to launch 3DEqualizer4 in that will automatically
@@ -26,15 +25,11 @@ class TDE4Launcher(SoftwareLauncher):
         required_env = {}
 
         # Run the engine's startup/*.py files when 3DEqualizer starts up
-        startup_path = os.path.join(self.disk_location, 'startup')
-
-        # Get path to temp menu folder, and add it to the environment.
-        menufolder = tempfile.mkdtemp(prefix='tk-3dequalizer_')
-        required_env['TK_3DE4_MENU_DIR'] = menufolder
-
-        required_env['PYTHON_CUSTOM_SCRIPTS_3DE4'] = os.pathsep.join(
-            [x for x in os.getenv('PYTHON_CUSTOM_SCRIPTS_3DE4', '').split(os.pathsep) if x]
-            + [startup_path, menufolder,self.test])
+        # by appending it to the env PYTHON_CUSTOM_SCRIPTS_3DE4.
+        startup_path = os.path.join(self.disk_location, "startup")
+        #sgtk.util.append_path_to_env_var("PYTHON_CUSTOM_SCRIPTS_3DE4", startup_path)
+        os.environ["PYTHON_CUSTOM_SCRIPTS_3DE4"] = startup_path
+        required_env["PYTHON_CUSTOM_SCRIPTS_3DE4"] = os.environ["PYTHON_CUSTOM_SCRIPTS_3DE4"]
 
         # Add context information info to the env.
         required_env["TANK_CONTEXT"] = sgtk.Context.serialize(self.context)
@@ -44,7 +39,6 @@ class TDE4Launcher(SoftwareLauncher):
             args += " {}".format(subprocess.list2cmdline(("-open", file_to_open)))
 
         return LaunchInformation(exec_path, args, required_env)
-   
 
     def scan_software(self):
         """
@@ -55,7 +49,6 @@ class TDE4Launcher(SoftwareLauncher):
 
         try:
             import rez as _
-
         except ImportError:
             rez_path = self.get_rez_module_root()
             if not isinstance(rez_path, str):
@@ -64,8 +57,7 @@ class TDE4Launcher(SoftwareLauncher):
                 raise EnvironmentError('rez is not installed and could not be automatically found. Cannot continue.')
 
             sys.path.append(rez_path)
-
-        from rez.package_search import ResourceSearcher, ResourceSearchResultFormatter
+        from rez.package_search import ResourceSearcher , ResourceSearchResultFormatter
 
 
         searcher = ResourceSearcher()
@@ -75,15 +67,15 @@ class TDE4Launcher(SoftwareLauncher):
         supported_sw_versions = []
         self.logger.debug("Scanning for 3de executables...")
         infos = formatter.format_search_results(packages)
-        
+
         for info in infos:
             name,version = info[0].split("-")
+            
 
-            software = SoftwareVersion(version,name,"3de",self._icon_from_engine())
+            software = SoftwareVersion(version,name,"rez_init",self._icon_from_engine())
             supported_sw_versions.append(software)
 
         return supported_sw_versions
-
 
     def _icon_from_engine(self):
         """
@@ -95,9 +87,7 @@ class TDE4Launcher(SoftwareLauncher):
 
         # the engine icon
         engine_icon = os.path.join(self.disk_location, "icon_256.png")
-
         return engine_icon
-
 
     def get_rez_module_root(self):
         
@@ -111,9 +101,10 @@ class TDE4Launcher(SoftwareLauncher):
         if not stderr and module_path:
             return module_path
 
-        return ''
 
+
+        return ''
 
     def get_rez_root_command(self):
 
-        return 'rez-env rez -- echo %REZ_REZ_ROOT%'
+        return 'rez-env rez -- printenv REZ_REZ_ROOT'
